@@ -1,70 +1,97 @@
 {% extends "base.html" %}
 {% block content %}
-<div id="noSpaceMsg" class="alert alert-warning text-center" style="display:none;">
-    У вас нет активных пространств. 
-    <a href="/join" class="alert-link">Присоединиться по коду</a> 
-    или 
-    <button onclick="createSpace()" class="btn btn-sm btn-primary ms-2">Создать новое</button>
+<div id="noSpaceMsg" class="alert text-center border-0 shadow-sm" style="display:none; background: rgba(107, 91, 115, 0.05); border-radius: 20px;">
+    <p class="mb-2 serif fs-5">Вы пока одиноки в лесу.</p>
+    <a href="/join" class="btn btn-outline-secondary me-2">Присоединиться по коду</a> 
+    <button onclick="createSpace()" class="btn btn-primary">Создать свою территорию</button>
 </div>
 
 <div id="dashboardContent" style="display:none;">
-    <div class="card p-3 mb-4">
-        <div class="d-flex justify-content-between align-items-center">
+    <!-- Заголовок и Инвайт -->
+    <div class="card p-4 mb-4 border-0">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-                <label class="form-label text-muted small mb-0">Текущее пространство</label>
-                <select id="spaceSelect" class="form-select form-select-lg fw-bold border-0 bg-transparent" style="width: auto;"></select>
+                <label class="text-muted small text-uppercase" style="letter-spacing: 0.1em;">Текущая территория</label>
+                <select id="spaceSelect" class="form-select form-select-lg border-0 fw-bold serif ps-0" style="width: auto; background: transparent; font-size: 2rem; color: var(--text-main);"></select>
             </div>
             
-            <!-- Блок с инвайт-кодом -->
             <div id="inviteBlock" class="text-end" style="display:none;">
-                <label class="form-label text-muted small mb-0">Код приглашения</label>
-                <div class="d-flex align-items-center gap-2 justify-content-end">
-                    <code id="inviteCodeText" class="fs-4 text-primary"></code>
-                    <button onclick="copyInviteCode()" class="btn btn-outline-primary btn-sm">📋 Копировать</button>
+                <label class="text-muted small text-uppercase" style="letter-spacing: 0.1em;">Ключ для стаи</label>
+                <div class="d-flex align-items-center gap-3 justify-content-end mt-1">
+                    <code id="inviteCodeText" class="fs-3 text-balance serif fw-bold"></code>
+                    <button onclick="copyInviteCode()" class="btn btn-sm btn-outline-secondary">Скопировать</button>
                 </div>
             </div>
         </div>
     </div>
-    <div class="card balance-card p-4 mb-4 text-center">
-        <h1 id="balanceDisplay">0 ₽</h1>
-        <div class="d-flex justify-content-center gap-4 mt-2">
-            <span>Доходы: <strong id="incomeDisplay">0 ₽</strong></span>
-            <span>Расходы: <strong id="expenseDisplay">0 ₽</strong></span>
+
+    <!-- Баланс -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-12">
+            <div class="card p-5 text-center border-0" style="background: linear-gradient(135deg, #F6F5F0 0%, #EBEAE2 100%);">
+                <p class="text-muted small text-uppercase mb-2">Общий баланс пространства</p>
+                <h1 id="balanceDisplay" class="display-3 serif text-balance mb-4">0 ₽</h1>
+                <div class="d-flex justify-content-center gap-5">
+                    <div>
+                        <p class="small text-muted mb-1">Принесено в логово</p>
+                        <h4 id="incomeDisplay" class="serif text-income">0 ₽</h4>
+                    </div>
+                    <div style="width: 1px; background: var(--border);"></div>
+                    <div>
+                        <p class="small text-muted mb-1">Потрачено на охоту</p>
+                        <h4 id="expenseDisplay" class="serif text-expense">0 ₽</h4>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Действия и Аналитика -->
     <div class="row g-4 mb-4">
         <div class="col-md-4">
-            <div class="card p-3">
-                <h5>➕ Добавить операцию</h5>
-                <form id="txForm" class="mt-3">
-                    <div class="mb-2"><input type="number" step="0.01" id="txAmount" class="form-control" placeholder="Сумма" required></div>
-                    <div class="mb-2">
+            <div class="card p-4 h-100 border-0">
+                <h5 class="serif mb-3">Добавить след</h5>
+                <form id="txForm">
+                    <div class="mb-3">
+                        <input type="number" step="0.01" id="txAmount" class="form-control form-control-lg serif" placeholder="Сумма" required>
+                    </div>
+                    <div class="mb-3">
                         <select id="txType" class="form-select">
-                            <option value="expense">Расход</option>
-                            <option value="income">Доход</option>
+                            <option value="expense">Убыло (Расход)</option>
+                            <option value="income">Прибыло (Доход)</option>
                         </select>
                     </div>
-                    <div class="mb-2"><input type="text" id="txCategory" class="form-control" placeholder="Категория (Еда, ЖКХ...)" required></div>
-                    <div class="mb-2"><input type="text" id="txDesc" class="form-control" placeholder="Описание (необязательно)"></div>
-                    <button type="submit" class="btn btn-primary w-100">Сохранить</button>
+                    <div class="mb-3"><input type="text" id="txCategory" class="form-control" placeholder="Категория (Добыча, Укрытие...)" required></div>
+                    <div class="mb-4"><input type="text" id="txDesc" class="form-control" placeholder="Заметка на полях"></div>
+                    <button type="submit" class="btn btn-primary w-100">Записать в гроссбух</button>
                 </form>
             </div>
         </div>
         <div class="col-md-8">
-            <div class="card p-3">
-                <h5>📊 Распределение расходов по пользователям</h5>
-                <canvas id="expenseChart"></canvas>
+            <div class="card p-4 h-100 border-0">
+                <h5 class="serif mb-3">Распределение ресурсов</h5>
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <canvas id="expenseChart" style="max-height: 250px;"></canvas>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="card p-3">
-        <h5>📜 Лента активности</h5>
-        <div class="table-responsive mt-2">
-            <table class="table table-hover">
-                <thead><tr><th>Кто</th><th>Категория</th><th>Описание</th><th>Сумма</th><th>Время</th></tr></thead>
-                <tbody id="txTableBody"></tbody>
+    <!-- Лента -->
+    <div class="card p-4 border-0">
+        <h5 class="serif mb-3">Хроника событий</h5>
+        <div class="table-responsive">
+            <table class="table table-borderless align-middle">
+                <thead>
+                    <tr class="text-muted small text-uppercase">
+                        <th>Кто</th>
+                        <th>Суть</th>
+                        <th>Заметка</th>
+                        <th class="text-end">Сумма</th>
+                        <th class="text-end">Время</th>
+                    </tr>
+                </thead>
+                <tbody id="txTableBody" class="serif fs-5"></tbody>
             </table>
         </div>
     </div>
@@ -101,7 +128,6 @@
         document.getElementById('noSpaceMsg').style.display = 'none';
         document.getElementById('dashboardContent').style.display = 'block';
         
-        // Заполняем селект и сохраняем данные о пространствах
         window.mySpaces = {}; 
         spaces.forEach(s => {
             const opt = document.createElement('option');
@@ -127,7 +153,7 @@
         const block = document.getElementById('inviteBlock');
         if (code) {
             document.getElementById('inviteCodeText').textContent = code;
-            block.style.display = 'flex';
+            block.style.display = 'block';
         } else {
             block.style.display = 'none';
         }
@@ -136,7 +162,11 @@
     function copyInviteCode() {
         const code = document.getElementById('inviteCodeText').textContent;
         navigator.clipboard.writeText(code).then(() => {
-            alert(`Код ${code} скопирован! Отправьте его второму участнику.`);
+            // Тихое копирование без назойливых alert
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'Скопировано ✓';
+            setTimeout(() => btn.textContent = originalText, 2000);
         });
     }
 
@@ -144,32 +174,55 @@
         if (!currentSpaceId) return;
         const stats = await api(`/transactions/space/${currentSpaceId}`);
         
-        document.getElementById('balanceDisplay').textContent = `${stats.balance.toFixed(2)} ₽`;
-        document.getElementById('incomeDisplay').textContent = `${stats.total_income.toFixed(2)} ₽`;
-        document.getElementById('expenseDisplay').textContent = `${stats.total_expense.toFixed(2)} ₽`;
+        document.getElementById('balanceDisplay').textContent = `${stats.balance.toFixed(0)} ₽`;
+        document.getElementById('incomeDisplay').textContent = `${stats.total_income.toFixed(0)} ₽`;
+        document.getElementById('expenseDisplay').textContent = `${stats.total_expense.toFixed(0)} ₽`;
 
-        // График
+        // График в стиле Lynx
         const ctx = document.getElementById('expenseChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
         const labels = Object.keys(stats.user_breakdown);
         const data = labels.map(u => stats.user_breakdown[u].expense);
-        const colors = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'];
+        
+        // Палитра: Шалфей, Терракота, Сланец, Теплый песок
+        const colors = ['#556B5B', '#8C5A5A', '#6B5B73', '#A89F91', '#46594B']; 
+        
         chartInstance = new Chart(ctx, {
             type: 'doughnut',
-            data: { labels, datasets: [{ data, backgroundColor: colors.slice(0, labels.length) }] },
-            options: { responsive: true }
+            data: { 
+                labels, 
+                datasets: [{ 
+                    data, 
+                    backgroundColor: colors.slice(0, labels.length),
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }] 
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { family: 'Lora', size: 14 }, padding: 20, usePointStyle: true }
+                    }
+                }
+            }
         });
 
         // Таблица
         const tbody = document.getElementById('txTableBody');
         tbody.innerHTML = '';
         stats.transactions.forEach(tx => {
-            const color = tx.type === 'income' ? 'text-success' : 'text-danger';
+            const colorClass = tx.type === 'income' ? 'text-income' : 'text-expense';
             const sign = tx.type === 'income' ? '+' : '-';
             const row = `<tr>
-                <td>${tx.username}</td><td>${tx.category}</td><td>${tx.description || '-'}</td>
-                <td class="${color} fw-bold">${sign}${tx.amount} ₽</td>
-                <td><small class="text-muted">${new Date(tx.created_at).toLocaleString()}</small></td>
+                <td class="fw-bold">${tx.username}</td>
+                <td>${tx.category}</td>
+                <td class="text-muted fst-italic">${tx.description || '—'}</td>
+                <td class="text-end fw-bold ${colorClass}">${sign}${tx.amount} ₽</td>
+                <td class="text-end text-muted small" style="font-family: 'Inter', sans-serif;">${new Date(tx.created_at).toLocaleDateString()}</td>
             </tr>`;
             tbody.innerHTML += row;
         });
@@ -188,21 +241,16 @@
         loadStats();
     });
 
-    loadSpaces();
-    setInterval(loadStats, 5000); // Автообновление каждые 5 сек
-
-
-
     async function createSpace() {
-    const name = prompt("Введите название пространства:", "Семья");
-    if (!name) return;
-    const res = await api('/spaces/create', 'POST', { name });
-    if (res.id) {
-        alert(`Пространство "${res.name}" создано! Код приглашения: ${res.invite_code}`);
-        loadSpaces(); // Перезагрузить список
-    } else {
-        alert("Ошибка создания");
+        const name = prompt("Как назовем вашу территорию?", "Логово");
+        if (!name) return;
+        const res = await api('/spaces/create', 'POST', { name });
+        if (res.id) {
+            loadSpaces();
+        }
     }
-}
+
+    loadSpaces();
+    setInterval(loadStats, 5000);
 </script>
 {% endblock %}
