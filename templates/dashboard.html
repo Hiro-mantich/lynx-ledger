@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-<div id="noSpaceMsg" class="alert text-center border-0 shadow-sm" style="display:none; background: rgba(107, 91, 115, 0.05); border-radius: 20px;">
-    <p class="mb-2 serif fs-5">Вы пока одиноки в лесу.</p>
+<div id="noSpaceMsg" class="alert text-center border-0 shadow-sm p-4" style="display:none; background: rgba(107, 91, 115, 0.05); border-radius: 20px;">
+    <p class="mb-3 serif fs-5">У вас пока нет общих пространств.</p>
     <a href="/join" class="btn btn-outline-secondary me-2">Присоединиться по коду</a> 
-    <button onclick="createSpace()" class="btn btn-primary">Создать свою территорию</button>
+    <button onclick="createSpace()" class="btn btn-primary">Создать пространство</button>
 </div>
 
 <div id="dashboardContent" style="display:none;">
@@ -11,12 +11,12 @@
     <div class="card p-4 mb-4 border-0">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-                <label class="text-muted small text-uppercase" style="letter-spacing: 0.1em;">Текущая территория</label>
+                <label class="text-muted small text-uppercase" style="letter-spacing: 0.1em;">Текущее пространство</label>
                 <select id="spaceSelect" class="form-select form-select-lg border-0 fw-bold serif ps-0" style="width: auto; background: transparent; font-size: 2rem; color: var(--text-main);"></select>
             </div>
             
             <div id="inviteBlock" class="text-end" style="display:none;">
-                <label class="text-muted small text-uppercase" style="letter-spacing: 0.1em;">Ключ для стаи</label>
+                <label class="text-muted small text-uppercase" style="letter-spacing: 0.1em;">Код приглашения</label>
                 <div class="d-flex align-items-center gap-3 justify-content-end mt-1">
                     <code id="inviteCodeText" class="fs-3 text-balance serif fw-bold"></code>
                     <button onclick="copyInviteCode()" class="btn btn-sm btn-outline-secondary">Скопировать</button>
@@ -29,16 +29,16 @@
     <div class="row g-4 mb-4">
         <div class="col-md-12">
             <div class="card p-5 text-center border-0" style="background: linear-gradient(135deg, #F6F5F0 0%, #EBEAE2 100%);">
-                <p class="text-muted small text-uppercase mb-2">Общий баланс пространства</p>
+                <p class="text-muted small text-uppercase mb-2">Общий баланс</p>
                 <h1 id="balanceDisplay" class="display-3 serif text-balance mb-4">0 ₽</h1>
                 <div class="d-flex justify-content-center gap-5">
                     <div>
-                        <p class="small text-muted mb-1">Принесено в логово</p>
+                        <p class="small text-muted mb-1">Доходы</p>
                         <h4 id="incomeDisplay" class="serif text-income">0 ₽</h4>
                     </div>
                     <div style="width: 1px; background: var(--border);"></div>
                     <div>
-                        <p class="small text-muted mb-1">Потрачено на охоту</p>
+                        <p class="small text-muted mb-1">Расходы</p>
                         <h4 id="expenseDisplay" class="serif text-expense">0 ₽</h4>
                     </div>
                 </div>
@@ -50,26 +50,26 @@
     <div class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="card p-4 h-100 border-0">
-                <h5 class="serif mb-3">Добавить след</h5>
+                <h5 class="serif mb-3">Новая операция</h5>
                 <form id="txForm">
                     <div class="mb-3">
                         <input type="number" step="0.01" id="txAmount" class="form-control form-control-lg serif" placeholder="Сумма" required>
                     </div>
                     <div class="mb-3">
                         <select id="txType" class="form-select">
-                            <option value="expense">Убыло (Расход)</option>
-                            <option value="income">Прибыло (Доход)</option>
+                            <option value="expense">Расход</option>
+                            <option value="income">Доход</option>
                         </select>
                     </div>
-                    <div class="mb-3"><input type="text" id="txCategory" class="form-control" placeholder="Категория (Добыча, Укрытие...)" required></div>
-                    <div class="mb-4"><input type="text" id="txDesc" class="form-control" placeholder="Заметка на полях"></div>
-                    <button type="submit" class="btn btn-primary w-100">Записать в гроссбух</button>
+                    <div class="mb-3"><input type="text" id="txCategory" class="form-control" placeholder="Категория (Еда, Транспорт...)" required></div>
+                    <div class="mb-4"><input type="text" id="txDesc" class="form-control" placeholder="Комментарий"></div>
+                    <button type="submit" class="btn btn-primary w-100">Добавить</button>
                 </form>
             </div>
         </div>
         <div class="col-md-8">
             <div class="card p-4 h-100 border-0">
-                <h5 class="serif mb-3">Распределение ресурсов</h5>
+                <h5 class="serif mb-3">Доля расходов по участникам</h5>
                 <div class="d-flex justify-content-center align-items-center h-100">
                     <canvas id="expenseChart" style="max-height: 250px;"></canvas>
                 </div>
@@ -79,16 +79,16 @@
 
     <!-- Лента -->
     <div class="card p-4 border-0">
-        <h5 class="serif mb-3">Хроника событий</h5>
+        <h5 class="serif mb-3">История операций</h5>
         <div class="table-responsive">
             <table class="table table-borderless align-middle">
                 <thead>
                     <tr class="text-muted small text-uppercase">
-                        <th>Кто</th>
-                        <th>Суть</th>
-                        <th>Заметка</th>
+                        <th>Участник</th>
+                        <th>Категория</th>
+                        <th>Комментарий</th>
                         <th class="text-end">Сумма</th>
-                        <th class="text-end">Время</th>
+                        <th class="text-end">Дата</th>
                     </tr>
                 </thead>
                 <tbody id="txTableBody" class="serif fs-5"></tbody>
@@ -162,7 +162,6 @@
     function copyInviteCode() {
         const code = document.getElementById('inviteCodeText').textContent;
         navigator.clipboard.writeText(code).then(() => {
-            // Тихое копирование без назойливых alert
             const btn = event.target;
             const originalText = btn.textContent;
             btn.textContent = 'Скопировано ✓';
@@ -178,13 +177,12 @@
         document.getElementById('incomeDisplay').textContent = `${stats.total_income.toFixed(0)} ₽`;
         document.getElementById('expenseDisplay').textContent = `${stats.total_expense.toFixed(0)} ₽`;
 
-        // График в стиле Lynx
+        // График
         const ctx = document.getElementById('expenseChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
         const labels = Object.keys(stats.user_breakdown);
         const data = labels.map(u => stats.user_breakdown[u].expense);
         
-        // Палитра: Шалфей, Терракота, Сланец, Теплый песок
         const colors = ['#556B5B', '#8C5A5A', '#6B5B73', '#A89F91', '#46594B']; 
         
         chartInstance = new Chart(ctx, {
@@ -242,7 +240,7 @@
     });
 
     async function createSpace() {
-        const name = prompt("Как назовем вашу территорию?", "Логово");
+        const name = prompt("Название пространства:", "Семейный бюджет");
         if (!name) return;
         const res = await api('/spaces/create', 'POST', { name });
         if (res.id) {
