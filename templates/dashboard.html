@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 <div id="noSpaceMsg" class="alert alert-warning text-center" style="display:none;">
-    У вас нет активных пространств. <a href="/join" class="alert-link">Присоединиться по коду</a> или создать новое.
+    У вас нет активных пространств. 
+    <a href="/join" class="alert-link">Присоединиться по коду</a> 
+    или 
+    <button onclick="createSpace()" class="btn btn-sm btn-primary ms-2">Создать новое</button>
 </div>
 
 <div id="dashboardContent" style="display:none;">
@@ -187,5 +190,19 @@
 
     loadSpaces();
     setInterval(loadStats, 5000); // Автообновление каждые 5 сек
+
+
+
+    async function createSpace() {
+    const name = prompt("Введите название пространства:", "Семья");
+    if (!name) return;
+    const res = await api('/spaces/create', 'POST', { name });
+    if (res.id) {
+        alert(`Пространство "${res.name}" создано! Код приглашения: ${res.invite_code}`);
+        loadSpaces(); // Перезагрузить список
+    } else {
+        alert("Ошибка создания");
+    }
+}
 </script>
 {% endblock %}
