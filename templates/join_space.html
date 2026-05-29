@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card p-4">
+            <h3 class="text-center mb-4">Присоединиться к пространству</h3>
+            <form id="joinForm">
+                <div class="mb-3"><input type="text" id="code" class="form-control text-uppercase" placeholder="Код приглашения (например, A7X9Q2)" required></div>
+                <button type="submit" class="btn btn-info w-100 text-white">Подключиться</button>
+            </form>
+            <p class="mt-3 text-center"><a href="/dashboard">← Вернуться к дашборду</a></p>
+        </div>
+    </div>
+</div>
+<script>
+    document.getElementById('joinForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        if (!token) return alert('Сначала войдите!');
+        const res = await fetch('/spaces/join', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+            body: JSON.stringify({ invite_code: document.getElementById('code').value.toUpperCase() })
+        });
+        if (res.ok) { alert('Успешно подключено!'); window.location.href = '/dashboard'; }
+        else { alert('Неверный код или вы уже участник.'); }
+    });
+</script>
+{% endblock %}

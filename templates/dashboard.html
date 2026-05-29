@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="noSpaceMsg" class="alert alert-warning text-center" style="display:none;">
+    У вас нет активных пространств. <a href="/join" class="alert-link">Присоединиться по коду</a> или создать новое.
+</div>
+
+<div id="dashboardContent" style="display:none;">
+    <div class="card p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <label class="form-label text-muted small mb-0">Текущее пространство</label>
+                <select id="spaceSelect" class="form-select form-select-lg fw-bold border-0 bg-transparent" style="width: auto;"></select>
+            </div>
+            
+            <!-- Блок с инвайт-кодом -->
+            <div id="inviteBlock" class="text-end" style="display:none;">
+                <label class="form-label text-muted small mb-0">Код приглашения</label>
+                <div class="d-flex align-items-center gap-2 justify-content-end">
+                    <code id="inviteCodeText" class="fs-4 text-primary"></code>
+                    <button onclick="copyInviteCode()" class="btn btn-outline-primary btn-sm">📋 Копировать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card balance-card p-4 mb-4 text-center">
+        <h1 id="balanceDisplay">0 ₽</h1>
+        <div class="d-flex justify-content-center gap-4 mt-2">
+            <span>Доходы: <strong id="incomeDisplay">0 ₽</strong></span>
+            <span>Расходы: <strong id="expenseDisplay">0 ₽</strong></span>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card p-3">
+                <h5>➕ Добавить операцию</h5>
+                <form id="txForm" class="mt-3">
+                    <div class="mb-2"><input type="number" step="0.01" id="txAmount" class="form-control" placeholder="Сумма" required></div>
+                    <div class="mb-2">
+                        <select id="txType" class="form-select">
+                            <option value="expense">Расход</option>
+                            <option value="income">Доход</option>
+                        </select>
+                    </div>
+                    <div class="mb-2"><input type="text" id="txCategory" class="form-control" placeholder="Категория (Еда, ЖКХ...)" required></div>
+                    <div class="mb-2"><input type="text" id="txDesc" class="form-control" placeholder="Описание (необязательно)"></div>
+                    <button type="submit" class="btn btn-primary w-100">Сохранить</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card p-3">
+                <h5>📊 Распределение расходов по пользователям</h5>
+                <canvas id="expenseChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-3">
+        <h5>📜 Лента активности</h5>
+        <div class="table-responsive mt-2">
+            <table class="table table-hover">
+                <thead><tr><th>Кто</th><th>Категория</th><th>Описание</th><th>Сумма</th><th>Время</th></tr></thead>
+                <tbody id="txTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/';
+    let chartInstance = null;
+    let currentSpaceId = null;
+
+    async function api(endpoint, method='GET', body=null) {
+        const opts = { method, headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`} };
+        if (body) opts.body = JSON.stringify(body);
+        const res = await fetch(endpoint, opts);
+        if (res.status === 401) { localStorage.removeItem('token'); window.location.href = '/'; }
+        return await res.json();
+    }
+
+    async function loadSpaces() {
+        const spaces = await api('/spaces/my');
+        const sel = document.getElementById('spaceSelect');
+        const inviteBlock = document.getElementById('inviteBlock');
+        
+        sel.innerHTML = '';
+        inviteBlock.style.display = 'none';
+
+        if (spaces.length === 0) {
+            document.getElementById('noSpaceMsg').style.display = 'block';
+            document.getElementById('dashboardContent').style.display = 'none';
+            return;
+        }
+        
+        document.getElementById('noSpaceMsg').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+        
+        // Заполняем селект и сохраняем данные о пространствах
+        window.mySpaces = {}; 
+        spaces.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.name;
+            sel.appendChild(opt);
+            window.mySpaces[s.id] = s.invite_code;
+        });
+
+        sel.onchange = (e) => { 
+            currentSpaceId = e.target.value; 
+            updateInviteCode();
+            loadStats(); 
+        };
+        
+        currentSpaceId = sel.value;
+        updateInviteCode();
+        loadStats();
+    }
+
+    function updateInviteCode() {
+        const code = window.mySpaces[currentSpaceId];
+        const block = document.getElementById('inviteBlock');
+        if (code) {
+            document.getElementById('inviteCodeText').textContent = code;
+            block.style.display = 'flex';
+        } else {
+            block.style.display = 'none';
+        }
+    }
+
+    function copyInviteCode() {
+        const code = document.getElementById('inviteCodeText').textContent;
+        navigator.clipboard.writeText(code).then(() => {
+            alert(`Код ${code} скопирован! Отправьте его второму участнику.`);
+        });
+    }
+
+    async function loadStats() {
+        if (!currentSpaceId) return;
+        const stats = await api(`/transactions/space/${currentSpaceId}`);
+        
+        document.getElementById('balanceDisplay').textContent = `${stats.balance.toFixed(2)} ₽`;
+        document.getElementById('incomeDisplay').textContent = `${stats.total_income.toFixed(2)} ₽`;
+        document.getElementById('expenseDisplay').textContent = `${stats.total_expense.toFixed(2)} ₽`;
+
+        // График
+        const ctx = document.getElementById('expenseChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+        const labels = Object.keys(stats.user_breakdown);
+        const data = labels.map(u => stats.user_breakdown[u].expense);
+        const colors = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'];
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels, datasets: [{ data, backgroundColor: colors.slice(0, labels.length) }] },
+            options: { responsive: true }
+        });
+
+        // Таблица
+        const tbody = document.getElementById('txTableBody');
+        tbody.innerHTML = '';
+        stats.transactions.forEach(tx => {
+            const color = tx.type === 'income' ? 'text-success' : 'text-danger';
+            const sign = tx.type === 'income' ? '+' : '-';
+            const row = `<tr>
+                <td>${tx.username}</td><td>${tx.category}</td><td>${tx.description || '-'}</td>
+                <td class="${color} fw-bold">${sign}${tx.amount} ₽</td>
+                <td><small class="text-muted">${new Date(tx.created_at).toLocaleString()}</small></td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    document.getElementById('txForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await api('/transactions/add', 'POST', {
+            amount: parseFloat(document.getElementById('txAmount').value),
+            type: document.getElementById('txType').value,
+            category: document.getElementById('txCategory').value,
+            description: document.getElementById('txDesc').value,
+            space_id: parseInt(currentSpaceId)
+        });
+        e.target.reset();
+        loadStats();
+    });
+
+    loadSpaces();
+    setInterval(loadStats, 5000); // Автообновление каждые 5 сек
+</script>
+{% endblock %}
