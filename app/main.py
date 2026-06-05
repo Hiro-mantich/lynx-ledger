@@ -8,6 +8,7 @@ from .models import User, Space, Membership, Transaction, Goal
 from .auth import router as auth_router
 from .spaces import router as spaces_router
 from .transactions import router as transactions_router
+from .categories import router as categories_router
 
 
 @asynccontextmanager
@@ -17,15 +18,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Finance Tracker", lifespan=lifespan)
 
-# Инициализация шаблонов (папка templates должна существовать!)
+# Инициализация шаблонов 
 templates = Jinja2Templates(directory="templates")
 
-# API Роуты (оставляем без префикса /api, так как в роутерах уже есть свои префиксы)
+# API Роуты 
 app.include_router(auth_router)
 app.include_router(spaces_router)
 app.include_router(transactions_router)
+app.include_router(categories_router)
 
-# 🌐 HTML Роуты (Фронтенд)
+# HTML Роуты 
 @app.get("/", response_class=HTMLResponse)
 async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})

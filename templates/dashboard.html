@@ -1,94 +1,203 @@
 {% extends "base.html" %}
 {% block content %}
-<div id="noSpaceMsg" class="alert text-center border-0 shadow-sm p-4" style="display:none; background: rgba(107, 91, 115, 0.05); border-radius: 20px;">
-    <p class="mb-3 serif fs-5">У вас пока нет общих пространств.</p>
-    <a href="/join" class="btn btn-outline-secondary me-2">Присоединиться по коду</a> 
-    <button onclick="createSpace()" class="btn btn-primary">Создать пространство</button>
-</div>
-
-<div id="dashboardContent" style="display:none;">
-    <!-- Заголовок и Инвайт -->
-    <div class="card p-4 mb-4 border-0">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-            <div>
-                <label class="text-muted small text-uppercase" style="letter-spacing: 0.1em;">Текущее пространство</label>
-                <select id="spaceSelect" class="form-select form-select-lg border-0 fw-bold serif ps-0" style="width: auto; background: transparent; font-size: 2rem; color: var(--text-main);"></select>
-            </div>
-            
-            <div id="inviteBlock" class="text-end" style="display:none;">
-                <label class="text-muted small text-uppercase" style="letter-spacing: 0.1em;">Код приглашения</label>
-                <div class="d-flex align-items-center gap-3 justify-content-end mt-1">
-                    <code id="inviteCodeText" class="fs-3 text-balance serif fw-bold"></code>
-                    <button onclick="copyInviteCode()" class="btn btn-sm btn-outline-secondary">Скопировать</button>
-                </div>
-            </div>
+<!-- ОБЗОР  -->
+<div id="overviewView" class="fade-in">
+    <div class="card p-4 mb-4 border-0 text-center" style="background: linear-gradient(135deg, #F6F5F0 0%, #EBEAE2 100%);">
+        <p class="text-muted small text-uppercase mb-2">Общий баланс по всем пространствам</p>
+        <h1 id="globalBalance" class="display-3 serif text-balance mb-3">0 ₽</h1>
+        <div class="d-flex justify-content-center gap-4">
+            <span class="text-income serif fs-5">↑ <span id="globalIncome">0</span> ₽</span>
+            <span class="text-expense serif fs-5">↓ <span id="globalExpense">0</span> ₽</span>
         </div>
+    </div>
+
+<div id="primarySpaceBlock" class="mb-5 fade-in" style="display:none;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="serif mb-0">Основное пространство</h3>
+        <span id="primaryName" class="badge-lynx fs-6"></span>
     </div>
 
     <!-- Баланс -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-12">
-            <div class="card p-5 text-center border-0" style="background: linear-gradient(135deg, #F6F5F0 0%, #EBEAE2 100%);">
-                <p class="text-muted small text-uppercase mb-2">Общий баланс</p>
-                <h1 id="balanceDisplay" class="display-3 serif text-balance mb-4">0 ₽</h1>
-                <div class="d-flex justify-content-center gap-5">
-                    <div>
-                        <p class="small text-muted mb-1">Доходы</p>
-                        <h4 id="incomeDisplay" class="serif text-income">0 ₽</h4>
+    <div class="card p-4 mb-3 border-0 text-center" style="background: linear-gradient(135deg, #F6F5F0 0%, #EBEAE2 100%);">
+        <h1 id="pBalance" class="display-4 serif text-balance mb-2">0 ₽</h1>
+        <div class="d-flex justify-content-center gap-4">
+            <span class="text-income serif">↑ <span id="pIncome">0</span> ₽</span>
+            <span class="text-expense serif">↓ <span id="pExpense">0</span> ₽</span>
+        </div>
+    </div>
+
+    <button type="button" class="btn btn-sm btn-outline-secondary w-100 mb-3" onclick="showCategoryManager()">
+        ⚙️ Управление категориями
+    </button>
+
+    <div class="row g-3">
+        <!-- Форма добавления -->
+        <div class="col-md-4">
+            <div class="card p-3 h-100 border-0">
+                <h5 class="serif mb-3">Новая операция</h5>
+                <form id="pTxForm">
+                    <input type="hidden" id="pSpaceId">
+                    <div class="mb-2"><input type="number" step="0.01" id="pAmount" class="form-control" placeholder="Сумма" required></div>
+                    <div class="mb-2">
+                        <select id="pType" class="form-select">
+                            <option value="expense">Расход</option>
+                            <option value="income">Доход</option>
+                        </select>
                     </div>
-                    <div style="width: 1px; background: var(--border);"></div>
-                    <div>
-                        <p class="small text-muted mb-1">Расходы</p>
-                        <h4 id="expenseDisplay" class="serif text-expense">0 ₽</h4>
+                        <div class="mb-2">
+                            <select id="pCategory" class="form-select" required>
+                                <option value="" disabled selected>Выберите категорию</option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <select id="pSubcategory" class="form-select" disabled>
+                                <option value="">Сначала выберите категорию</option>
+                            </select>
+                        </div>
+                    <div class="mb-3"><input type="text" id="pDesc" class="form-control" placeholder="Комментарий"></div>
+                    <button type="submit" class="btn btn-primary w-100">Добавить</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- График -->
+        <div class="col-md-8">
+            <div class="card p-3 h-100 border-0">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="serif mb-0">Аналитика</h5>
+                    <div class="btn-group btn-group-sm" role="group" id="pChartTabs">
+                        <button type="button" class="btn btn-outline-secondary active" data-mode="expense" onclick="switchPChartMode('expense', this)">Расходы</button>
+                        <button type="button" class="btn btn-outline-secondary" data-mode="income" onclick="switchPChartMode('income', this)">Доходы</button>
                     </div>
+                </div>
+                <div style="height: 250px; position: relative;">
+                    <canvas id="pChart"></canvas>
+                </div>
+                <div id="pChartLegend" class="custom-legend mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Таблица последних операций -->
+    <div class="card p-3 mt-3 border-0">
+        <h5 class="serif mb-3">Последние операции</h5>
+        <div class="table-responsive">
+            <table class="table table-borderless align-middle mb-0">
+                <thead>
+                    <tr class="text-muted small text-uppercase">
+                        <th>Кто</th><th>Категория</th><th>Комментарий</th><th class="text-end">Сумма</th><th class="text-end">Дата</th>
+                    </tr>
+                </thead>
+
+
+                <tbody id="pTxTable" class="serif fs-5"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+    <div id="primarySpaceBlock" class="card p-4 mb-4 border-0 fade-in" style="display:none; border-left: 4px solid var(--lynx-green) !important;">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <span class="badge-lynx mb-2 d-inline-block">Основное пространство</span>
+                <h3 id="primaryName" class="serif mb-0"></h3>
+            </div>
+            <button onclick="openPrimarySpace()" class="btn btn-sm btn-outline-secondary">Открыть →</button>
+        </div>
+        
+        <div class="row g-3">
+            <div class="col-4 text-center">
+                <p class="text-muted small mb-1">Баланс</p>
+                <h4 id="primaryBalance" class="serif text-balance mb-0">0 ₽</h4>
+            </div>
+            <div class="col-4 text-center">
+                <p class="text-muted small mb-1">Доходы</p>
+                <h5 id="primaryIncome" class="serif text-income mb-0">0 ₽</h5>
+            </div>
+            <div class="col-4 text-center">
+                <p class="text-muted small mb-1">Расходы</p>
+                <h5 id="primaryExpense" class="serif text-expense mb-0">0 ₽</h5>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="serif mb-3">Ваши пространства</h5>
+    <div id="spacesGrid" class="row g-3 mb-4"></div>
+    
+    <div class="text-center mt-3">
+        <a href="/join" class="btn btn-outline-secondary me-2">Присоединиться по коду</a>
+        <button onclick="createSpace()" class="btn btn-primary">Создать новое</button>
+    </div>
+</div>
+
+<!--  ДЕТАЛИ ПРОСТРАНСТВА  -->
+<div id="spaceDetailView" style="display:none;" class="fade-in">
+    <button onclick="showOverview()" class="btn btn-outline-secondary mb-3">← Назад к обзору</button>
+    
+    <div class="card p-4 mb-4 border-0">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <h2 id="detailSpaceName" class="serif mb-0"></h2>
+            <div id="detailInviteBlock" class="text-end">
+                <label class="text-muted small text-uppercase">Код приглашения</label>
+                <div class="d-flex align-items-center gap-2 justify-content-end">
+                    <code id="detailInviteCode" class="fs-5 text-balance serif fw-bold"></code>
+                    <button onclick="copyInviteCode()" class="btn btn-sm btn-outline-secondary">Копировать</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Действия и Аналитика -->
     <div class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="card p-4 h-100 border-0">
                 <h5 class="serif mb-3">Новая операция</h5>
                 <form id="txForm">
-                    <div class="mb-3">
-                        <input type="number" step="0.01" id="txAmount" class="form-control form-control-lg serif" placeholder="Сумма" required>
-                    </div>
-                    <div class="mb-3">
+                    <div class="mb-2"><input type="number" step="0.01" id="txAmount" class="form-control" placeholder="Сумма" required></div>
+                    <div class="mb-2">
                         <select id="txType" class="form-select">
                             <option value="expense">Расход</option>
                             <option value="income">Доход</option>
                         </select>
                     </div>
-                    <div class="mb-3"><input type="text" id="txCategory" class="form-control" placeholder="Категория (Еда, Транспорт...)" required></div>
-                    <div class="mb-4"><input type="text" id="txDesc" class="form-control" placeholder="Комментарий"></div>
+                    <div class="mb-2">
+                        <select id="txCategory" class="form-select" required>
+                            <option value="" disabled selected>Выберите категорию</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <select id="txSubcategory" class="form-select" disabled>
+                            <option value="">Сначала выберите категорию</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><input type="text" id="txDesc" class="form-control" placeholder="Комментарий"></div>
                     <button type="submit" class="btn btn-primary w-100">Добавить</button>
                 </form>
             </div>
         </div>
-        <div class="col-md-8">
-            <div class="card p-4 h-100 border-0">
-                <h5 class="serif mb-3">Доля расходов по участникам</h5>
-                <div class="d-flex justify-content-center align-items-center h-100">
-                    <canvas id="expenseChart" style="max-height: 250px;"></canvas>
-                </div>
+<div class="col-md-8">
+    <div class="card p-4 h-100 border-0">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="serif mb-0">Аналитика</h5>
+            <div class="btn-group btn-group-sm" role="group" id="chartTabs">
+                <button type="button" class="btn btn-outline-secondary active" data-mode="expense" onclick="switchChartMode('expense', this)">Расходы</button>
+                <button type="button" class="btn btn-outline-secondary" data-mode="income" onclick="switchChartMode('income', this)">Доходы</button>
             </div>
         </div>
+        <div style="height: 280px; position: relative;">
+            <canvas id="expenseChart"></canvas>
+        </div>
+        <div id="detailChartLegend" class="custom-legend mt-3"></div>
+    </div>
+</div>
     </div>
 
-    <!-- Лента -->
     <div class="card p-4 border-0">
         <h5 class="serif mb-3">История операций</h5>
         <div class="table-responsive">
             <table class="table table-borderless align-middle">
                 <thead>
                     <tr class="text-muted small text-uppercase">
-                        <th>Участник</th>
-                        <th>Категория</th>
-                        <th>Комментарий</th>
-                        <th class="text-end">Сумма</th>
-                        <th class="text-end">Дата</th>
+                        <th>Участник</th><th>Категория</th><th>Комментарий</th><th class="text-end">Сумма</th><th class="text-end">Дата</th>
                     </tr>
                 </thead>
                 <tbody id="txTableBody" class="serif fs-5"></tbody>
@@ -97,11 +206,248 @@
     </div>
 </div>
 
+
+    <!-- Модальное окно управления категориями -->
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title serif">Управление категориями</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-expense">Расходы</h6>
+                        <div id="expenseCategoriesList"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-income">Доходы</h6>
+                        <div id="incomeCategoriesList"></div>
+                    </div>
+                </div>
+                
+                <hr>
+                <h6>Создать новую категорию</h6>
+                    <form id="newCategoryForm" class="row g-2">
+                        <div class="col-md-3">
+                       
+                            <input type="text" name="name" id="newCatName" class="form-control" placeholder="Название" required>
+                        </div>
+                        <div class="col-md-2">
+                            
+                            <input type="text" name="icon" id="newCatIcon" class="form-control" placeholder="Иконка" value="💰">
+                        </div>
+                        <div class="col-md-2">
+                           
+                            <input type="color" name="color" id="newCatColor" class="form-control form-control-color" value="#556B5B">
+                        </div>
+                        <div class="col-md-3">
+                           
+                            <select id="newCatType" name="type" class="form-select">
+                                <option value="expense">Расход</option>
+                                <option value="income">Доход</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Создать</button>
+                        </div>
+                    </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    const token = localStorage.getItem('token');
+
+    var token = token || localStorage.getItem('token');
     if (!token) window.location.href = '/';
+    
     let chartInstance = null;
+    let pChartInstance = null;
     let currentSpaceId = null;
+    let spacesCache = {};
+    let CATEGORIES = {}; // Глобальный кэш категорий
+
+        // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ДЛЯ ГРАФИКОВ 
+    let pChartData = null;
+    let pChartMode = 'expense';
+    let detailChartData = null;
+    let detailChartMode = 'expense';
+
+    //  ПЛАГИН ДЛЯ ТЕКСТА В ЦЕНТРЕ ПОНЧИКА 
+    const centerTextPlugin = {
+        id: 'centerText',
+        beforeDraw: (chart) => {
+            const { width, height, ctx } = chart;
+            const text = chart.options.plugins.centerText?.text || '';
+            const label = chart.options.plugins.centerText?.label || '';
+            if (!text) return;
+            
+            ctx.restore();
+            const fontSize = (height / 120).toFixed(2);
+            ctx.font = `500 ${fontSize}em Lora, serif`;
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+            
+            const textX = width / 2;
+            const textY = height / 2;
+            
+            ctx.fillStyle = '#6B5B73';
+            ctx.fillText(text, textX, textY - 8);
+            
+            ctx.font = `400 0.7em Inter, sans-serif`;
+            ctx.fillStyle = '#7A7A7A';
+            ctx.fillText(label, textX, textY + 18);
+            ctx.save();
+        }
+    };
+
+    // Регистрируем плагин один раз
+    if (typeof Chart !== 'undefined' && !Chart.registry?.plugins?.get('centerText')) {
+        Chart.register(centerTextPlugin);
+    }
+
+    //  ПЕРЕКЛЮЧАТЕЛИ РЕЖИМОВ 
+    function switchPChartMode(mode, btn) {
+        pChartMode = mode;
+        document.querySelectorAll('#pChartTabs button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderPChart();
+    }
+
+    function switchChartMode(mode, btn) {
+        detailChartMode = mode;
+        document.querySelectorAll('#chartTabs button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderDetailChart();
+    }
+
+    //  РЕНДЕР ГРАФИКА PRIMARY SPACE 
+    function renderPChart() {
+        if (!pChartData) return;
+        const ctx = document.getElementById('pChart')?.getContext('2d');
+        if (!ctx) return;
+
+        const labels = Object.keys(pChartData.user_breakdown);
+        const data = labels.map(u => pChartData.user_breakdown[u][pChartMode] || 0);
+        const total = data.reduce((a, b) => a + b, 0);
+        
+        const colors = pChartMode === 'expense' 
+            ? ['#8C5A5A', '#A89F91', '#6B5B73', '#46594B', '#556B5B']
+            : ['#556B5B', '#6B5B73', '#A89F91', '#8C5A5A', '#46594B'];
+        
+        if (pChartInstance) pChartInstance.destroy();
+        
+        // Обработка случая, когда данных нет
+        if (total === 0) {
+            pChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: ['Нет данных'], datasets: [{ data: [1], backgroundColor: ['#E8E8E3'], borderWidth: 0 }] },
+                options: { 
+                    responsive: true, maintainAspectRatio: false, cutout: '72%', 
+                    plugins: { 
+                        legend: { display: false }, 
+                        centerText: { text: '0 ₽', label: 'Нет данных' } 
+                    } 
+                }
+            });
+            renderCustomLegend('pChartLegend', [], [], [], pChartMode);
+            return;
+        }
+
+        // Основная ветка (есть данные)
+        pChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels, datasets: [{ data, backgroundColor: colors.slice(0, labels.length), borderWidth: 3, borderColor: '#FFFFFF', hoverOffset: 12 }] },
+            options: { 
+                responsive: true, maintainAspectRatio: false, cutout: '72%',
+                plugins: { 
+                    legend: { display: false }, // <-- ИСПРАВЛЕНО: Отключаем встроенную легенду
+                    centerText: { text: `${total.toFixed(0)} ₽`, label: pChartMode === 'expense' ? 'Всего расходов' : 'Всего доходов' },
+                    tooltip: { backgroundColor: 'rgba(44, 44, 44, 0.95)', padding: 12, cornerRadius: 8, callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed} ₽` } }
+                }
+            }
+        });
+
+        // Добавляем рендер кастомной легенды под графиком
+        renderCustomLegend('pChartLegend', labels, data, colors.slice(0, labels.length), pChartMode);
+    }
+
+    // РЕНДЕР ГРАФИКА ДЕТАЛЬНОГО ПРОСМОТРА 
+    function renderDetailChart() {
+        if (!detailChartData) return;
+        const ctx = document.getElementById('expenseChart')?.getContext('2d');
+        if (!ctx) return;
+
+        const labels = Object.keys(detailChartData.user_breakdown);
+        const data = labels.map(u => detailChartData.user_breakdown[u][detailChartMode] || 0);
+        const total = data.reduce((a, b) => a + b, 0);
+        
+        const colors = detailChartMode === 'expense'
+            ? ['#8C5A5A', '#A89F91', '#6B5B73', '#46594B', '#556B5B']
+            : ['#556B5B', '#6B5B73', '#A89F91', '#8C5A5A', '#46594B'];
+        
+        if (chartInstance) chartInstance.destroy();
+
+        if (total === 0) {
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: ['Нет данных'], datasets: [{ data: [1], backgroundColor: ['#E8E8E3'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false }, centerText: { text: '0 ₽', label: 'Нет данных' } } }
+            });
+            return;
+        }
+        
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels, datasets: [{ data, backgroundColor: colors.slice(0, labels.length), borderWidth: 4, borderColor: '#FFFFFF', hoverOffset: 15 }] },
+            options: { 
+                responsive: true, maintainAspectRatio: false, cutout: '72%',
+                plugins: { 
+                    legend: { display: false },
+                    centerText: { text: `${total.toFixed(0)} ₽`, label: detailChartMode === 'expense' ? 'Всего расходов' : 'Всего доходов' },
+                    tooltip: { backgroundColor: 'rgba(44, 44, 44, 0.95)', padding: 12, cornerRadius: 8, callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed} ₽` } }
+                }
+            }
+        });
+    }
+
+    // ГЕНЕРАЦИЯ КАСТОМНОЙ ЛЕГЕНДЫ 
+    function renderCustomLegend(containerId, labels, data, colors, mode) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        const total = data.reduce((a, b) => a + b, 0);
+        let html = '';
+        
+        if (total === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        labels.forEach((label, index) => {
+            const amount = data[index];
+            const percent = total > 0 ? ((amount / total) * 100).toFixed(1) : 0;
+            const color = colors[index % colors.length];
+            const textClass = mode === 'expense' ? 'text-expense' : 'text-income';
+            
+            html += `
+                <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid var(--border);">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="legend-dot" style="background-color: ${color}"></span>
+                        <span class="serif fs-6">${label}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-muted small">${percent}%</span>
+                        <span class="fw-bold ${textClass}">${amount.toFixed(0)} ₽</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
 
     async function api(endpoint, method='GET', body=null) {
         const opts = { method, headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`} };
@@ -111,144 +457,386 @@
         return await res.json();
     }
 
-    async function loadSpaces() {
-        const spaces = await api('/spaces/my');
-        const sel = document.getElementById('spaceSelect');
-        const inviteBlock = document.getElementById('inviteBlock');
-        
-        sel.innerHTML = '';
-        inviteBlock.style.display = 'none';
+    // ЕРЕКЛЮЧЕНИЕ ВИДОВ 
+    function showOverview() {
+        document.getElementById('overviewView').style.display = 'block';
+        document.getElementById('spaceDetailView').style.display = 'none';
+        loadOverview();
+    }
 
-        if (spaces.length === 0) {
-            document.getElementById('noSpaceMsg').style.display = 'block';
-            document.getElementById('dashboardContent').style.display = 'none';
+    function showSpaceDetail(spaceId) {
+        currentSpaceId = spaceId;
+        document.getElementById('overviewView').style.display = 'none';
+        document.getElementById('spaceDetailView').style.display = 'block';
+        document.getElementById('detailSpaceName').textContent = spacesCache[spaceId].name;
+        document.getElementById('detailInviteCode').textContent = spacesCache[spaceId].invite_code;
+        loadSpaceStats(true);
+        loadCategoriesForSpace(spaceId); // Загружаем категории для детального просмотра
+    }
+
+    // =ЗАГРУЗКА КАТЕГОРИЙ (УНИВЕРСАЛЬНАЯ) 
+    async function loadCategoriesForSpace(spaceId) {
+        if (!spaceId) return;
+        
+        try {
+            const res = await fetch(`/categories/space/${spaceId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (res.ok) {
+                const categories = await res.json();
+                const localCats = { expense: {}, income: {} };
+                
+                categories.forEach(cat => {
+                    localCats[cat.type][cat.name] = cat.subcategories;
+                });
+                
+                // Обновляем глобальный кэш
+                CATEGORIES = localCats;
+                
+                // Обновляем оба набора селектов
+                updateCategorySelect('pType', 'pCategory', 'pSubcategory');
+                updateCategorySelect('txType', 'txCategory', 'txSubcategory');
+            }
+        } catch (e) {
+            console.error('Ошибка загрузки категорий:', e);
+        }
+    }
+
+    //  ОБЗОР 
+    async function loadOverview() {
+        const data = await api('/spaces/overview');
+        document.getElementById('globalBalance').textContent = `${data.global_balance.toFixed(0)} ₽`;
+        document.getElementById('globalIncome').textContent = data.global_income.toFixed(0);
+        document.getElementById('globalExpense').textContent = data.global_expense.toFixed(0);
+
+        const grid = document.getElementById('spacesGrid');
+        grid.innerHTML = '';
+        spacesCache = {};
+
+        if (data.spaces.length === 0) {
+            grid.innerHTML = '<p class="text-muted text-center w-100">Пока нет пространств</p>';
+            document.getElementById('primarySpaceBlock').style.display = 'none';
             return;
         }
-        
-        document.getElementById('noSpaceMsg').style.display = 'none';
-        document.getElementById('dashboardContent').style.display = 'block';
-        
-        window.mySpaces = {}; 
-        spaces.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.id;
-            opt.textContent = s.name;
-            sel.appendChild(opt);
-            window.mySpaces[s.id] = s.invite_code;
+
+        data.spaces.forEach(s => {
+            spacesCache[s.id] = s;
+            const color = s.balance >= 0 ? 'var(--lynx-green)' : 'var(--lynx-red)';
+            const isPrimary = s.is_primary;
+            
+            const menuHtml = `
+                <div class="dropdown">
+                    <button class="btn btn-sm p-0 border-0 text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="event.stopPropagation()">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><circle cx="8" cy="2" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="14" r="1.5"/></svg>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                        <li>
+                            ${isPrimary 
+                                ? '<span class="dropdown-item-text text-muted small fst-italic">✓ Выбрано основным</span>' 
+                                : `<a class="dropdown-item small" href="#" onclick="event.stopPropagation(); setPrimarySpace(${s.id})">Сделать основным</a>`
+                            }
+                        </li>
+                    </ul>
+                </div>
+            `;
+
+            const card = `
+            <div class="col-md-4 col-sm-6">
+                <div class="card p-3 h-100 border-0" onclick="showSpaceDetail(${s.id})" style="cursor:pointer; ${isPrimary ? 'border-left: 4px solid var(--lynx-green) !important;' : ''}">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="serif fw-bold mb-0">${s.name}</h6>
+                        ${menuHtml}
+                    </div>
+                    <p class="serif fs-4 fw-bold mb-1" style="color:${color}">${s.balance.toFixed(0)} ₽</p>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>↑ ${s.income.toFixed(0)}</span>
+                        <span>↓ ${s.expense.toFixed(0)}</span>
+                    </div>
+                </div>
+            </div>`;
+            grid.innerHTML += card;
         });
 
-        sel.onchange = (e) => { 
-            currentSpaceId = e.target.value; 
-            updateInviteCode();
-            loadStats(); 
-        };
+        // ЗАПОЛНЕНИЕ PRIMARY SPACE 
+        const pStats = data.primary_stats;
+        const pBlock = document.getElementById('primarySpaceBlock');
         
-        currentSpaceId = sel.value;
-        updateInviteCode();
-        loadStats();
-    }
+        if (pStats) {
+            pBlock.style.display = 'block';
+            document.getElementById('primaryName').textContent = 
+                data.spaces.find(s => s.id === pStats.space_id)?.name || 'Основное';
+            document.getElementById('pSpaceId').value = pStats.space_id;
+            
+            document.getElementById('pBalance').textContent = `${pStats.balance.toFixed(0)} ₽`;
+            document.getElementById('pIncome').textContent = pStats.total_income.toFixed(0);
+            document.getElementById('pExpense').textContent = pStats.total_expense.toFixed(0);
 
-    function updateInviteCode() {
-        const code = window.mySpaces[currentSpaceId];
-        const block = document.getElementById('inviteBlock');
-        if (code) {
-            document.getElementById('inviteCodeText').textContent = code;
-            block.style.display = 'block';
+            // ГРАФИК: Сохраняем данные и рендерим
+            pChartData = pStats;
+            renderPChart();
+
+            // Таблица
+            const tbody = document.getElementById('pTxTable');
+            tbody.innerHTML = '';
+            pStats.transactions.slice(0, 5).forEach(tx => {
+                const cat = tx.subcategory ? `${tx.category} / ${tx.subcategory}` : tx.category;
+                const cls = tx.type === 'income' ? 'text-income' : 'text-expense';
+                const sign = tx.type === 'income' ? '+' : '-';
+                tbody.innerHTML += `<tr>
+                    <td>${tx.username}</td>
+                    <td>${cat}</td>
+                    <td class="text-muted fst-italic">${tx.description || '—'}</td>
+                    <td class="text-end fw-bold ${cls}">${sign}${tx.amount} ₽</td>
+                    <td class="text-end text-muted small">${new Date(tx.created_at).toLocaleDateString()}</td>
+                </tr>`;
+            });
+
+            await loadCategoriesForSpace(pStats.space_id);
         } else {
-            block.style.display = 'none';
-        }
+            pBlock.style.display = 'none';
+        }        
     }
 
-    function copyInviteCode() {
-        const code = document.getElementById('inviteCodeText').textContent;
-        navigator.clipboard.writeText(code).then(() => {
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.textContent = 'Скопировано ✓';
-            setTimeout(() => btn.textContent = originalText, 2000);
-        });
-    }
-
-    async function loadStats() {
+    //  ДЕТАЛИ ПРОСТРАНСТВА 
+    async function loadSpaceStats(animate = false) {
         if (!currentSpaceId) return;
         const stats = await api(`/transactions/space/${currentSpaceId}`);
         
-        document.getElementById('balanceDisplay').textContent = `${stats.balance.toFixed(0)} ₽`;
-        document.getElementById('incomeDisplay').textContent = `${stats.total_income.toFixed(0)} ₽`;
-        document.getElementById('expenseDisplay').textContent = `${stats.total_expense.toFixed(0)} ₽`;
+        // ГРАФИК: Сохраняем данные и рендерим
+        detailChartData = stats;
+        renderDetailChart();
 
-        // График
-        const ctx = document.getElementById('expenseChart').getContext('2d');
-        if (chartInstance) chartInstance.destroy();
-        const labels = Object.keys(stats.user_breakdown);
-        const data = labels.map(u => stats.user_breakdown[u].expense);
-        
-        const colors = ['#556B5B', '#8C5A5A', '#6B5B73', '#A89F91', '#46594B']; 
-        
-        chartInstance = new Chart(ctx, {
-            type: 'doughnut',
-            data: { 
-                labels, 
-                datasets: [{ 
-                    data, 
-                    backgroundColor: colors.slice(0, labels.length),
-                    borderWidth: 0,
-                    hoverOffset: 10
-                }] 
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { font: { family: 'Lora', size: 14 }, padding: 20, usePointStyle: true }
-                    }
-                }
-            }
-        });
-
-        // Таблица
         const tbody = document.getElementById('txTableBody');
         tbody.innerHTML = '';
         stats.transactions.forEach(tx => {
+            const catDisplay = tx.subcategory ? `${tx.category} / ${tx.subcategory}` : tx.category;
             const colorClass = tx.type === 'income' ? 'text-income' : 'text-expense';
             const sign = tx.type === 'income' ? '+' : '-';
-            const row = `<tr>
+            tbody.innerHTML += `<tr>
                 <td class="fw-bold">${tx.username}</td>
-                <td>${tx.category}</td>
+                <td>${catDisplay}</td>
                 <td class="text-muted fst-italic">${tx.description || '—'}</td>
                 <td class="text-end fw-bold ${colorClass}">${sign}${tx.amount} ₽</td>
-                <td class="text-end text-muted small" style="font-family: 'Inter', sans-serif;">${new Date(tx.created_at).toLocaleDateString()}</td>
+                <td class="text-end text-muted small">${new Date(tx.created_at).toLocaleDateString()}</td>
             </tr>`;
-            tbody.innerHTML += row;
         });
     }
 
-    document.getElementById('txForm').addEventListener('submit', async (e) => {
+    // ОБРАБОТЧИКИ ФОРМ 
+    document.getElementById('pTxForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await api('/transactions/add', 'POST', {
+            amount: parseFloat(document.getElementById('pAmount').value),
+            type: document.getElementById('pType').value,
+            category: document.getElementById('pCategory').value,
+            subcategory: document.getElementById('pSubcategory').value || null,
+            description: document.getElementById('pDesc').value,
+            space_id: parseInt(document.getElementById('pSpaceId').value)
+        });
+        e.target.reset();
+        loadOverview();
+    });
+
+    document.getElementById('txForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         await api('/transactions/add', 'POST', {
             amount: parseFloat(document.getElementById('txAmount').value),
             type: document.getElementById('txType').value,
             category: document.getElementById('txCategory').value,
+            subcategory: document.getElementById('txSubcategory').value || null,
             description: document.getElementById('txDesc').value,
             space_id: parseInt(currentSpaceId)
         });
         e.target.reset();
-        loadStats();
+        loadSpaceStats(true);
     });
 
+    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ 
+    function copyInviteCode() {
+        const code = document.getElementById('detailInviteCode').textContent;
+        navigator.clipboard.writeText(code).then(() => {
+            const btn = event.target;
+            const orig = btn.textContent;
+            btn.textContent = 'Скопировано ✓';
+            setTimeout(() => btn.textContent = orig, 2000);
+        });
+    }
+
     async function createSpace() {
-        const name = prompt("Название пространства:", "Семейный бюджет");
+        const name = prompt("Название пространства:", "-");
         if (!name) return;
-        const res = await api('/spaces/create', 'POST', { name });
-        if (res.id) {
-            loadSpaces();
+        await api('/spaces/create', 'POST', { name });
+        showOverview();
+    }
+
+    async function setPrimarySpace(spaceId) {
+        await api(`/spaces/set-primary/${spaceId}`, 'POST');
+        loadOverview(); 
+    }
+    
+    // УПРАВЛЕНИЕ КАТЕГОРИЯМИ 
+    let categoryModal = null;
+
+   console.log('✅ ДОШЛИ ДО КАТЕГОРИЙ');
+    async function showCategoryManager() {
+        // Определяем ID пространства для модалки
+        const modalSpaceId = currentSpaceId || document.getElementById('pSpaceId')?.value;
+        if (!modalSpaceId) return alert('Сначала выберите пространство');
+        
+        if (!categoryModal) {
+            categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
+        }
+        
+        await loadCategoryList(modalSpaceId);
+        categoryModal.show();
+    }
+
+    async function loadCategoryList(spaceId) {
+        const res = await fetch(`/categories/space/${spaceId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        
+        const categories = await res.json();
+        let expenseHtml = '';
+        let incomeHtml = '';
+        
+        categories.forEach(cat => {
+            const item = `
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                    <span>${cat.icon} ${cat.name} <small class="text-muted">(${cat.subcategories.length} подкат.)</small></span>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${cat.id}, '${spaceId}')">×</button>
+                </div>
+            `;
+            if (cat.type === 'expense') expenseHtml += item;
+            else incomeHtml += item;
+        });
+        
+        document.getElementById('expenseCategoriesList').innerHTML = expenseHtml || '<p class="text-muted small">Нет категорий</p>';
+        document.getElementById('incomeCategoriesList').innerHTML = incomeHtml || '<p class="text-muted small">Нет категорий</p>';
+    }
+
+    async function deleteCategory(categoryId, spaceId) {
+        if (!confirm('Удалить категорию?')) return;
+        await fetch(`/categories/${categoryId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+        await loadCategoryList(spaceId);
+        await loadCategoriesForSpace(spaceId);
+    }
+    console.log('🎯 ПЕРЕД РЕГИСТРАЦИЕЙ ОБРАБОТЧИКА ФОРМЫ'); 
+    document.getElementById('newCategoryForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        console.log('🚀 ОБРАБОТЧИК ФОРМЫ СРАБОТАЛ!');
+        console.log('🚀 ОБРАБОТЧИК ФОРМЫ СРАБОТАЛ!');
+        const modalSpaceId = currentSpaceId || document.getElementById('pSpaceId')?.value;
+        if (!modalSpaceId) return alert('Выберите пространство');
+        
+        const formData = new FormData(e.target); // Берем данные прямо из формы
+        
+        try {
+            const res = await fetch(`/categories/space/${modalSpaceId}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData  // НЕ ставь Content-Type, браузер сам поставит boundary
+            });
+            
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            console.error('❌ ДЕТАЛИ ОШИБКИ 422:', JSON.stringify(errData, null, 2));
+            
+            // Красивый вывод того, какое именно поле не нравится FastAPI
+            let msg = 'Ошибка валидации:\n';
+            if (errData.detail) {
+                errData.detail.forEach(e => {
+                    msg += `- Поле "${e.loc[e.loc.length-1]}": ${e.msg}\n`;
+                });
+            }
+            alert(msg);
+            return;
+        }
+            
+            e.target.reset();
+            document.getElementById('newCatIcon').value = '💰';
+            document.getElementById('newCatColor').value = '#556B5B';
+            await loadCategoryList(modalSpaceId);
+            await loadCategoriesForSpace(modalSpaceId);
+        } catch (err) {
+            console.error('Сетевая ошибка:', err);
+            alert('Ошибка сети: ' + err.message);
+        }
+    });
+
+    // ЛОГИКА СЕЛЕКТОВ КАТЕГОРИЙ 
+    function updateCategorySelect(typeId, catId, subCatId) {
+        const type = document.getElementById(typeId)?.value || 'expense';
+        const catSelect = document.getElementById(catId);
+        const subSelect = document.getElementById(subCatId);
+        
+        if (!catSelect || !CATEGORIES[type]) return;
+
+        const currentCat = catSelect.value;
+        catSelect.innerHTML = '<option value="" disabled selected>Выберите категорию</option>';
+        
+        Object.keys(CATEGORIES[type]).forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            if (cat === currentCat) opt.selected = true;
+            catSelect.appendChild(opt);
+        });
+
+        catSelect.onchange = () => updateSubcategorySelect(catId, subCatId, type);
+        
+        if (currentCat && CATEGORIES[type][currentCat]) {
+            catSelect.value = currentCat;
+            updateSubcategorySelect(catId, subCatId, type);
+        } else {
+            resetSubcategory(subSelect);
         }
     }
 
-    loadSpaces();
-    setInterval(loadStats, 5000);
+    function updateSubcategorySelect(catId, subCatId, type) {
+        const cat = document.getElementById(catId).value;
+        const subSelect = document.getElementById(subCatId);
+        const subs = CATEGORIES[type]?.[cat] || [];
+
+        subSelect.innerHTML = '';
+        if (subs.length === 0) {
+            subSelect.disabled = true;
+            subSelect.innerHTML = '<option value="">Нет подкатегорий</option>';
+        } else {
+            subSelect.disabled = false;
+            subSelect.innerHTML = '<option value="" disabled selected>Выберите подкатегорию</option>';
+            subs.forEach(sub => {
+                const opt = document.createElement('option');
+                opt.value = sub;
+                opt.textContent = sub;
+                subSelect.appendChild(opt);
+            });
+        }
+    }
+
+    function resetSubcategory(subSelect) {
+        if (!subSelect) return;
+        subSelect.disabled = true;
+        subSelect.innerHTML = '<option value="">Сначала выберите категорию</option>';
+    }
+
+    // Слушатели смены типа
+    document.getElementById('pType')?.addEventListener('change', () => 
+        updateCategorySelect('pType', 'pCategory', 'pSubcategory'));
+    document.getElementById('txType')?.addEventListener('change', () => 
+        updateCategorySelect('txType', 'txCategory', 'txSubcategory'));
+
+    //  ИНИЦИАЛИЗАЦИЯ 
+    showOverview();
+    setInterval(() => {
+        if (document.getElementById('spaceDetailView').style.display !== 'none') {
+            loadSpaceStats(false);
+        }
+    }, 5000);
 </script>
+
+
+
 {% endblock %}

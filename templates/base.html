@@ -129,13 +129,31 @@
             font-style: italic;
             font-family: 'Lora', serif;
         }
+
+        .btn-outline-light {
+            color: var(--text-main) !important;
+            border-color: var(--border) !important;
+            background: white;
+        }
+        .btn-outline-light:hover {
+            background: var(--border) !important;
+            color: var(--text-main) !important;
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-light mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="/">Lynx <span>Ledger</span></a>
-            <button id="logoutBtn" class="btn btn-outline-light btn-sm" style="display:none;">Выйти</button>
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand mb-0" href="/">Lynx <span>Ledger</span></a>
+            <button id="logoutBtn" class="btn btn-sm btn-outline-secondary" style="display:none;">Выйти</button>
         </div>
     </nav>
     <div class="container fade-in">
@@ -146,13 +164,31 @@
         <p>«Управляй ресурсами тихо. Закапывай добычу про запас.» 🐾</p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-        const token = localStorage.getItem('token');
-        if (token) document.getElementById('logoutBtn').style.display = 'block';
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('token');
-            window.location.href = '/';
-        });
+        var token = localStorage.getItem('token');
+        
+        // 1. Редирект если нет токена (кроме страниц входа/регистрации)
+        if (!token) {
+            const publicPaths = ['/', '/register', '/login'];
+            if (!publicPaths.includes(window.location.pathname)) {
+                window.location.href = '/';
+            }
+        } else {
+            // 2. Показываем кнопку только если токен ЕСТЬ
+            // Используем DOMContentLoaded, чтобы гарантировать, что навбар уже отрисован
+            document.addEventListener('DOMContentLoaded', () => {
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn) {
+                    logoutBtn.style.display = 'block';
+                    logoutBtn.addEventListener('click', () => {
+                        localStorage.removeItem('token');
+                        window.location.href = '/';
+                    });
+                }
+            });
+        }
     </script>
 </body>
 </html>

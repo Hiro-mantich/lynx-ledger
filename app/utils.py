@@ -6,10 +6,10 @@ from datetime import datetime, timedelta
 from typing import Optional
 from .config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
-# ===== Password Hashing (чистый bcrypt) =====
+#  Password Hashing 
 def hash_password(password: str) -> str:
     """Хэширует пароль через bcrypt"""
-    # bcrypt требует bytes, ограничиваем 72 байтами автоматически
+
     pwd_bytes = password.encode('utf-8')[:72]
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(pwd_bytes, salt)
@@ -24,7 +24,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     except Exception:
         return False
 
-# ===== JWT Tokens =====
+#  JWT Tokens
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
@@ -41,6 +41,6 @@ def verify_token(token: str) -> Optional[dict]:
     except jwt.PyJWTError:
         return None
 
-# ===== Invite Codes =====
+# Invite Codes 
 def generate_invite_code(length: int = 6) -> str:
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))

@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import datetime
 from .models import TransactionType
 
-# ===== Auth Schemas =====
+# Auth Schemas
 class UserCreate(BaseModel):
     username: str
     password: str
@@ -30,7 +30,7 @@ class JoinSpace(BaseModel):
     invite_code: str
 
 
-# ===== Transaction Schemas =====
+# Transaction Schemas 
 class TransactionCreate(BaseModel):
     amount: float
     category: str
@@ -51,10 +51,31 @@ class TransactionResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# ===== Stats Schemas =====
+# Stats Schemas 
 class SpaceStats(BaseModel):
     total_income: float
     total_expense: float
     balance: float
     transactions: list[TransactionResponse]
     user_breakdown: dict
+    
+class TransactionCreate(BaseModel):
+    amount: float
+    category: str
+    subcategory: Optional[str] = None
+    type: TransactionType
+    description: Optional[str] = None
+    space_id: int
+
+class TransactionResponse(BaseModel):
+    id: int
+    user_id: int
+    username: str
+    amount: float
+    category: str
+    subcategory: Optional[str] = None
+    type: TransactionType
+    description: Optional[str] = None
+    created_at: datetime
+    class Config:
+        from_attributes = True
