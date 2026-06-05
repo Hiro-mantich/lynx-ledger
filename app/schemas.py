@@ -16,7 +16,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-# ===== Space Schemas =====
+# Space Schemas
 class SpaceCreate(BaseModel):
     name: str
 

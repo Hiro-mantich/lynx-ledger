@@ -363,7 +363,7 @@
             options: { 
                 responsive: true, maintainAspectRatio: false, cutout: '72%',
                 plugins: { 
-                    legend: { display: false }, // <-- ИСПРАВЛЕНО: Отключаем встроенную легенду
+                    legend: { display: false }, //
                     centerText: { text: `${total.toFixed(0)} ₽`, label: pChartMode === 'expense' ? 'Всего расходов' : 'Всего доходов' },
                     tooltip: { backgroundColor: 'rgba(44, 44, 44, 0.95)', padding: 12, cornerRadius: 8, callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed} ₽` } }
                 }
@@ -474,7 +474,7 @@
         loadCategoriesForSpace(spaceId); // Загружаем категории для детального просмотра
     }
 
-    // =ЗАГРУЗКА КАТЕГОРИЙ (УНИВЕРСАЛЬНАЯ) 
+    // ЗАГРУЗКА КАТЕГОРИЙ (УНИВЕРСАЛЬНАЯ) 
     async function loadCategoriesForSpace(spaceId) {
         if (!spaceId) return;
         
@@ -723,11 +723,10 @@
         await loadCategoryList(spaceId);
         await loadCategoriesForSpace(spaceId);
     }
-    console.log('🎯 ПЕРЕД РЕГИСТРАЦИЕЙ ОБРАБОТЧИКА ФОРМЫ'); 
+
     document.getElementById('newCategoryForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        console.log('🚀 ОБРАБОТЧИК ФОРМЫ СРАБОТАЛ!');
-        console.log('🚀 ОБРАБОТЧИК ФОРМЫ СРАБОТАЛ!');
+
         const modalSpaceId = currentSpaceId || document.getElementById('pSpaceId')?.value;
         if (!modalSpaceId) return alert('Выберите пространство');
         
